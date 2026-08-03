@@ -27,6 +27,8 @@ git clone https://github.com/MoonShadow1976/astrbot_plugin_ExchangeRateQuery
 
 请在astrbot面板配置，插件管理 -> astrbot_plugin_ExchangeRateQuery -> 操作 -> 插件配置
 
+其中 `base_amount` 控制汇率显示基准值，默认为 `100`；`enable_reverse_rate` 控制是否显示反向汇率。
+
 ## ⌨️ 命令
 
 |      命令      |          说明          |
@@ -36,3 +38,5 @@ git clone https://github.com/MoonShadow1976/astrbot_plugin_ExchangeRateQuery
 |   /汇率usage   |   查看API的余额信息   |
 |     /汇率     | 查询配置的默认货币汇率 |
 | /汇率 USD JPY |    查询指定货币汇率    |
+| /汇率 JPY 200 |    查询200 JPY兑换基准货币的汇率    |
+| /汇率 200JPY 或 /汇率 JPY200 |    支持金额与货币代码连写    |

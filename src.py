@@ -54,6 +54,12 @@ EXCHANGE_RATE_TMPL = """
                     </div>
                 </div>
 
+                {% if comp.reverse_rate %}
+                <div style="text-align: center; margin-top: 15px; color: #34495e; font-size: 16px;">
+                    {{ comp.reverse_rate }}
+                </div>
+                {% endif %}
+
                 <div style="text-align: center; margin-top: 10px; color: #7f8c8d; font-size: 14px;">
                     变化值: <span style="color: {% if comp.trend == 'up' %}#27ae60{% elif comp.trend == 'down' %}#e74c3c{% else %}#95a5a6{% endif %}; 
                                    font-weight: bold;">{{ comp.change_value }}</span>

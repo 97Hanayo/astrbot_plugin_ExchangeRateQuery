@@ -29,6 +29,18 @@
             "JPY"
           ]
     },
+    "base_amount": {
+        "description": "汇率显示基准值",
+        "type": "float",
+        "hint": "将1单位汇率放大为该金额显示，默认100；也用于反向汇率",
+        "default": 100
+    },
+    "enable_reverse_rate": {
+        "description": "显示反向汇率",
+        "type": "bool",
+        "hint": "是否同时显示目标货币兑换基准货币的汇率",
+        "default": true
+    },
     "enable_t2i": {
     "description": "输出文本转图像输出",
     "type": "bool",
