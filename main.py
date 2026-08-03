@@ -16,7 +16,7 @@ from typing import Any, List
     "astrbot_plugin_ExchangeRateQuery",
     "MoonShadow1976",
     "查询货币汇率的插件",
-    "1.3.2",
+    "1.3.3",
     "https://github.com/MoonShadow1976/astrbot_plugin_ExchangeRateQuery",
 )
 class ExchangeRateQueryPlugin(Star):
@@ -33,6 +33,10 @@ class ExchangeRateQueryPlugin(Star):
         )
         self.enable_reverse_rate: bool = config.get("enable_reverse_rate", True)
         self.enable_t2i: bool = config.get("enable_t2i", False)
+        self._currency_cache: tuple[datetime, dict[str, str]] | None = None
+        self._rate_cache: dict[
+            tuple[str, str], tuple[datetime, dict[str, float], dict[str, float]]
+        ] = {}
 
         if not self.api_key:
             logger.error("未配置OpenExchangeRates API KEY!")
@@ -163,15 +167,15 @@ class ExchangeRateQueryPlugin(Star):
 
         try:
             # 获取支持的货币代码与名称
-            currencies = await self.client.fetch_currencies()
+            currencies = await self._fetch_currencies_cached()
 
             # 获取当前和一周前汇率
             current_date = datetime.now()
             week_ago = current_date - timedelta(days=self.past_day)
+            historical_date = week_ago.strftime("%Y-%m-%d")
 
-            current_rates = await self.client.fetch_latest_rates(base_currency)
-            historical_rates = await self.client.fetch_historical_rates(
-                week_ago.strftime("%Y-%m-%d"), base_currency
+            current_rates, historical_rates = await self._fetch_rates_cached(
+                base_currency, historical_date
             )
 
             if self.enable_t2i:
@@ -354,6 +358,55 @@ class ExchangeRateQueryPlugin(Star):
         if amount.is_integer():
             return str(int(amount))
         return f"{amount:.4f}".rstrip("0").rstrip(".")
+
+    @staticmethod
+    def _next_hour(now: datetime) -> datetime:
+        """返回当前时间之后的下一个整点。"""
+        return (now + timedelta(hours=1)).replace(
+            minute=0, second=0, microsecond=0
+        )
+
+    async def _fetch_currencies_cached(self) -> dict[str, str]:
+        """缓存货币列表，直到下一个整点。"""
+        now = datetime.now()
+        cached = getattr(self, "_currency_cache", None)
+        if cached is not None and now < cached[0]:
+            return cached[1]
+
+        currencies = await self.client.fetch_currencies()
+        self._currency_cache = (self._next_hour(now), currencies)
+        return currencies
+
+    async def _fetch_rates_cached(
+        self, base_currency: str, historical_date: str
+    ) -> tuple[dict[str, float], dict[str, float]]:
+        """缓存当前及历史汇率，直到下一个整点。"""
+        now = datetime.now()
+        rate_cache = getattr(self, "_rate_cache", {})
+        self._rate_cache = rate_cache
+
+        # 清理过期项，避免长时间运行后缓存键持续增长。
+        expired_keys = [
+            key for key, cached in rate_cache.items() if now >= cached[0]
+        ]
+        for key in expired_keys:
+            del rate_cache[key]
+
+        cache_key = (base_currency, historical_date)
+        cached = rate_cache.get(cache_key)
+        if cached is not None and now < cached[0]:
+            return cached[1], cached[2]
+
+        current_rates = await self.client.fetch_latest_rates(base_currency)
+        historical_rates = await self.client.fetch_historical_rates(
+            historical_date, base_currency
+        )
+        rate_cache[cache_key] = (
+            self._next_hour(now),
+            current_rates,
+            historical_rates,
+        )
+        return current_rates, historical_rates
 
     @staticmethod
     def _parse_amount_query(parts: list[str]) -> tuple[str, float] | None:

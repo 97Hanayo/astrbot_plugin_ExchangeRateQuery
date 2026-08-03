@@ -29,6 +29,8 @@ git clone https://github.com/MoonShadow1976/astrbot_plugin_ExchangeRateQuery
 
 其中 `base_amount` 控制汇率显示基准值，默认为 `100`；`enable_reverse_rate` 控制是否显示反向汇率。
 
+汇率数据和货币列表会缓存到下一个整点，期间的重复查询会复用缓存结果。
+
 ## ⌨️ 命令
 
 |      命令      |          说明          |
